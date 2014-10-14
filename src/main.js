@@ -1,4 +1,4 @@
-"use strict"
+// "use strict"
 var menu = require('node-menu');
 var app = require('./app.js');
 
@@ -36,7 +36,17 @@ menu.addItem('Show tenants:',
         if(!references) {continue;}
         for (var j = references.length - 1; j >= 0; j--) {
           console.log("-> Reference: " + references[j].name + " " + references[j].contact);
-        };
+        }
+      }
+    }
+  }
+);
+menu.addItem('Show managers:', 
+  function() {
+    for (var i = 0; i <= people.length; i++) {
+      if (people[i] instanceof app.Manager){
+        console.log("\n" + people[i].name + " " + people[i].contact);
+        }
       }
     }
   }
@@ -64,16 +74,32 @@ menu.addItem('Show all units',
   }  
 );
 
-menu.addItem('(implement me) Show available units', 
+menu.addItem('Show available units', 
   function() {
-      console.log("Implement me");
-    } 
+    for(var i = building.units.length - 1; i >= 0; i--) {
+      if (building.units[i].available()){
+      console.log(" tenant: " + building.units[i].tenant +
+              " num: " + building.units[i].number + 
+                  " sqft: " + building.units[i].sqft +
+                  " rent: $" + building.units[i].rent);
+      }
+    }
+  } 
 );
 
-menu.addItem('(implement me) Add tenant reference', 
+menu.addItem('Add tenant reference', 
   function(tenant_name, ref_name, ref_contact) {
-      console.log("Implement me. Show error if tenant is unknown. Note: a reference is a person");
-    },
+    var error = true;
+    for (var i = 0; i < people.length; i++) {
+      if (people[i].name == tenant_name && people[i] instanceof app.Tenant){
+        people.push(new app.Person(ref_name, ref_contact));
+        people[i].addReference(people[people.length-1]);
+        error = false;
+
+      }
+    }
+    if(error){console.log("Error unknown Tenant");}
+  },  
     null, 
     [{'name': 'tenant_name', 'type': 'string'},
     {'name': 'ref_name', 'type': 'string'},
@@ -83,7 +109,20 @@ menu.addItem('(implement me) Add tenant reference',
 menu.addItem('(implement me) Move tenant in unit', 
   function(unit_number, tenant_name) {
       // find tenant and unit objects, use building's addTenant() function.
-      console.log("Implement me.");
+    var localTenant = null;
+    var localUnit = null;
+    for (var i = 0; i < people.length; i++) {
+      if (people[i].name == tenant_name && people[i] instanceof app.Tenant){
+        localTenant = people[i];
+      }
+    }
+    for (var j = 0; j < building.units.length; j++) {
+      if (building.units[j].number == unit_number){
+        localUnit = building.units[j];
+      }
+    }
+    if(!(localUnit && localTenant)){console.log("error Unkown Unit or Tenant");}
+    else{building.addTenant(localUnit, localTenant);}
     },
     null, 
     [{'name': 'unit_number', 'type': 'string'},
@@ -91,9 +130,13 @@ menu.addItem('(implement me) Move tenant in unit',
 );
 
 menu.addItem('(implement me) Evict tenant', 
-  function(tenant_name) {
       // Similar to above, use building's removeTenant() function.
-      console.log("Implement me");
+    function(tenant_name) {
+    for (var j = 0; j < building.units.length; j++) {
+      if (building.units[j].tenant.name == tenant_name){
+        building.removeTenant(units[j],units[j].tenant);
+      }
+    }
     },
     null, 
     [{'name': 'tenant_name', 'type': 'string'}] 
@@ -101,22 +144,28 @@ menu.addItem('(implement me) Evict tenant',
 
 menu.addItem('(implement me) Show total sqft rented', 
   function() {
-      console.log("Implement me");
-    } 
+    var sqft = 0;
+    for(var i = building.units.length - 1; i >= 0; i--) {
+      if (!building.units[i].available()){
+        sqft += units[i].sqft;
+      }
+    }
+    console.log(sqft);
+  } 
 );
 
 menu.addItem('(implement me) Show total yearly income', 
   function() {
-      // Note: only rented units produce income
-      console.log("Implement me.");
+    var income = 0;
+    for(var i = building.units.length - 1; i >= 0; i--) {
+      if (!building.units[i].available()){
+        income += units[i].rent;
+      }
+    }
+    console.log(income);
     } 
 );
 
-menu.addItem('(Add your own feature ...)', 
-  function() {
-      console.log("Implement a feature that you find is useful");
-    } 
-);
 
 // *******************************
 menu.addDelimiter('*', 40);
